@@ -15,6 +15,6 @@ public class Square : MonoBehaviour
 
     private void OnMouseDown()
     {
-        controller.SelectSquare(index);
+        controller.PlayerSelect(index);
     }
 }
