@@ -1,28 +1,55 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UIElements;
+using TMPro;
 
 public class Controller : MonoBehaviour
 {
     [SerializeField] GameObject[] squares;
     [SerializeField] Sprite[] shapes;
+    [SerializeField] Canvas settingsCanvas;
+    [SerializeField] Canvas endCanvas;
+    [SerializeField] TMP_Text endStatus;
 
     private int playerTurn = 0;
     private int aiTurn = 1;
     private int turn = 0;
     private int[] board = {-1,-1,-1, -1, -1, -1, -1, -1, -1};
-    private bool inGame = true;
+    private bool inGame = false;
+    private int depth = 2;
+
+    public void changeDifficulty(float difficulty)
+    {
+        if (difficulty == 0) depth = 2;
+        if (difficulty == 1) depth = 4;
+        if (difficulty == 2) depth = 6;
+    }
+
+    public void StartGame()
+    {
+        for (int index = 0; index < 9; index++)
+        {
+            squares[index].gameObject.GetComponent<SpriteRenderer>().sprite = null;
+            board[index] = -1;
+        }
+        turn = 0;
+        inGame = true;
+        settingsCanvas.gameObject.SetActive(false);
+        endCanvas.gameObject.SetActive(false);
+    }
 
     public void PlayerSelect(int index)
     {
-        if (board[index] == -1 && turn == playerTurn && inGame) PutSquare(index, playerTurn);
+        if (board[index] == -1 && turn == playerTurn && inGame) StartCoroutine(PutSquare(index, playerTurn));
     }
 
-    private void AISelect()
+    private IEnumerator AISelect()
     {
-        int bestMove = Minimax(board, turn, 6)[1];
-        Debug.Log(bestMove);
-        PutSquare(bestMove, aiTurn);
+        yield return new WaitForSeconds(1);
+        int bestMove = Minimax(board, turn, depth)[1];
+        StartCoroutine(PutSquare(bestMove, aiTurn));
     }
 
     private int[] Minimax(int[] checkBoard, int checkTurn, int depth)
@@ -121,7 +148,7 @@ public class Controller : MonoBehaviour
         return -1;
     }
 
-    private void PutSquare(int index, int shape)
+    private IEnumerator PutSquare(int index, int shape)
     {
         board[index] = shape;
         squares[index].gameObject.GetComponent<SpriteRenderer>().sprite = shapes[shape];
@@ -132,22 +159,13 @@ public class Controller : MonoBehaviour
 ;       if (endCondition != -1)
         {
             inGame = false;
-            Debug.Log(endCondition + " wins!");
-            ResetGame();
+            if (endCondition == 0) endStatus.text = "X wins!";
+            if (endCondition == 1) endStatus.text = "O wins!";
+            if (endCondition == 2) endStatus.text = "Draw!";
+            yield return new WaitForSeconds(1);
+            endCanvas.gameObject.SetActive(true);
         }
 
-        if (inGame && turn == aiTurn) AISelect();
-    }
-
-    private void ResetGame()
-    {
-        Debug.Log("ResetGame");
-        for (int index = 0; index < 8; index++)
-        {
-            squares[index].gameObject.GetComponent<SpriteRenderer>().sprite = null;
-            board[index] = -1;
-        }
-        turn = 0;
-        inGame = true;
+        if (inGame && turn == aiTurn) StartCoroutine(AISelect());
     }
 }
